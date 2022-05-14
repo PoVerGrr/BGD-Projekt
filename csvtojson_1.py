@@ -4,14 +4,14 @@ import json
  
 # Function to convert a CSV to JSON
 # Takes the file paths as arguments
-def make_json(csvFilePath, jsonFilePath):
+def make_json(csvFilePath, jsonFilePath, primaryKey, delimiter):
      
     # create a dictionary
     data = {}
      
     # Open a csv reader called DictReader
     with open(csvFilePath) as csvf:
-        csvReader = csv.DictReader(csvf, delimiter=";")
+        csvReader = csv.DictReader(csvf, delimiter=delimiter)
         
         # Convert each row into a dictionary
         # and add it to data
@@ -19,7 +19,7 @@ def make_json(csvFilePath, jsonFilePath):
              
             # Assuming a column named 'No' to
             # be the primary key
-            key = rows['Kod']
+            key = rows[primaryKey]
             data[key] = rows
  
     # Open a json writer, and use the json.dumps()
@@ -31,8 +31,9 @@ def make_json(csvFilePath, jsonFilePath):
  
 # Decide the two file paths according to your
 # computer system
-csvFilePath = r'expenses_per_person.csv'
-jsonFilePath = r'expenses_per_person.json'
- 
+csvFilePath = r'../dane.csv'
+jsonFilePath = r'../dane.json'
+primaryKey = "Kod"
+delimiter = ","
 # Call the make_json function
-make_json(csvFilePath, jsonFilePath)
+make_json(csvFilePath, jsonFilePath, primaryKey, delimiter)
