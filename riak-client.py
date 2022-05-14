@@ -25,6 +25,9 @@ PROVINCES = {
     "WIELKOPOLSKIE": "3000000",
     "ZACHODNIOPOMORSKIE": "3200000"
 }
+KEYS_LIST= ("produkty_zbozowe", "mieso", "owoce", "warzywa", "cukier", "ryby_owoce_morza",
+            "mleko", "jogurty", "sery", "tluszcze", "jaja")
+
 # connection
 client = RiakClient(pb_port=PORT)
 bucket = client.bucket(BUCKET)
@@ -36,7 +39,7 @@ def load_data(path, b):
         data = json.load(file)
         for key in data:
             value = data[key]
-            bucket.new(key, data=value).store()
+            b.new(key, data=value).store()
 
 
 # get single element from special province
@@ -53,17 +56,34 @@ def get_all_years_data(b, province, name):
     return result
 
 
+def food_sum(b, provinces, target):
+    dictionary = {}
+    for province in provinces:
+        year_amount_of_food = [0] * len(target)
+
+        for food_type in target:
+            all_years_food_type_amount = get_all_years_data(b, provinces[province], food_type)
+
+            for index, item in enumerate(all_years_food_type_amount):
+                all_years_food_type_amount[index] = float(item.replace(",", "."))
+
+            zipped_lists = zip(all_years_food_type_amount, year_amount_of_food)
+            year_amount_of_food = [round(x + y, 2) for (x, y) in zipped_lists]
+        dictionary[province] = year_amount_of_food
+    return dictionary
+
+
+def test():
+    # test 1
+    print("\nTest1: output should be 5,87")
+    print("Test1: result:", get_single_data(bucket, PROVINCES["ZACHODNIOPOMORSKIE"], "mieso", "2016"))
+
+    # test 2
+    print("\nTest2: output should be ['5,87', '5,83', '5,78', '5,57', '5,95']")
+    print("Test2: result:", get_all_years_data(bucket, PROVINCES["ZACHODNIOPOMORSKIE"], "mieso"))
+
 
 load_data(DATA_PATH, bucket)
+print(food_sum(bucket, PROVINCES, KEYS_LIST))
 
-
-# test 1: get_single_data function output should be: 5,87
-print(get_single_data(bucket, PROVINCES["ZACHODNIOPOMORSKIE"], "mieso", "2016"))
-
-# test 2: get_all_years_data output should be: ['5,87', '5,83', '5,78', '5,57', '5,95']
-print(get_all_years_data(bucket, PROVINCES["ZACHODNIOPOMORSKIE"], "mieso"))
-
-
-
-
-# 3. przetworzenie danych i odpowiedź
+test()
