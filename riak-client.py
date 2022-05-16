@@ -2,6 +2,7 @@ import riak
 import json
 import pandas as pd
 
+
 # properties
 from riak import RiakClient
 
@@ -104,16 +105,33 @@ def test():
 
 load_data(DATA_PATH, bucket)
 #Średnia miesięczna ilość spożywanego jedzenia dla województw w latach 2016-2020
-monthly_all_food_consumption_df = pd.DataFrame(food_sum(bucket, PROVINCES, KEYS_LIST))
+monthly_all_food_consumption_df = pd.DataFrame(food_sum(bucket, PROVINCES, KEYS_LIST)).T
 
 #Procent wydawanych pieniędzy na żywność w stosunku do dochodu dla wojewodztw w latach 2016-2020
-percent_of_money_spend_for_food_by_income_df = pd.DataFrame(percent_of_total(bucket, PROVINCES, "dochod", "wydatki_na_zywnosc"))
+percent_of_money_spend_for_food_by_income_df = pd.DataFrame(percent_of_total(bucket, PROVINCES, "dochod", "wydatki_na_zywnosc")).T
 
 #Procent wydawanych pieniedzy na żywność w stosunku do wydatków dla województw w latach 2016-2020
-percent_of_money_spend_for_food_by_expenses_df =pd.DataFrame(percent_of_total(bucket, PROVINCES, "wydatki_ogolem", "wydatki_na_zywnosc"))
+percent_of_money_spend_for_food_by_expenses_df =pd.DataFrame(percent_of_total(bucket, PROVINCES, "wydatki_ogolem", "wydatki_na_zywnosc")).T
 
 #test()
 
-print(f"Średnia miesięczna ilość spożywanego jedzenia (w kilogramach):\n",monthly_all_food_consumption_df.head())
-print(f"Stosunek wydatków ponoszonych na żywność do wydatków ogólnie (w procentach):\n",percent_of_money_spend_for_food_by_expenses_df.head())
+#print(f"Średnia miesięczna ilość spożywanego jedzenia (w kilogramach):\n",monthly_all_food_consumption_df.head())
+#print(f"Stosunek wydatków ponoszonych na żywność do wydatków ogólnie (w procentach):\n",percent_of_money_spend_for_food_by_expenses_df.head())
 #print(food_sum(bucket, PROVINCES, KEYS_LIST))
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+sns.set()
+
+#ax = sns.heatmap(percent_of_money_spend_for_food_by_income_df,annot=True,linewidths=.5,cmap="YlGnBu")
+#plt.title("Procent wydawanych pieniędzy na żywność w stosunku do dochodu dla wojewodztw w latach 2016-2020")
+#plt.show()
+
+
+#ax = sns.heatmap(percent_of_money_spend_for_food_by_expenses_df,annot=True,linewidths=.5,cmap="YlGnBu")
+#plt.title("Stosunek wydatków ponoszonych na żywność do wydatków ogólnie (w procentach)")
+#plt.show()
+
+#ax = sns.heatmap(monthly_all_food_consumption_df,annot=True,linewidths=.5,cmap="YlGnBu")
+#plt.title("Średnia miesięczna ilość spożywanego jedzenia dla województw w latach 2016-2020")
+#plt.show()
