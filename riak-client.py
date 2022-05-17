@@ -1,12 +1,10 @@
-import riak
+from riak import RiakClient
 import json
 import pandas as pd
-
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # properties
-from riak import RiakClient
-
-
 PORT = 8087
 BUCKET = "BGD-project"
 DATA_PATH = r"data/all_data.json"
@@ -30,7 +28,7 @@ PROVINCES = {
     "WIELKOPOLSKIE": "3000000",
     "ZACHODNIOPOMORSKIE": "3200000"
 }
-KEYS_LIST= ("produkty_zbozowe", "mieso", "owoce", "warzywa", "cukier", "ryby_owoce_morza",
+KEYS_LIST = ("produkty_zbozowe", "mieso", "owoce", "warzywa", "cukier", "ryby_owoce_morza",
             "mleko", "jogurty", "sery", "tluszcze", "jaja")
 
 # connection
@@ -65,32 +63,25 @@ def food_sum(b, provinces, target):
     dictionary = {}
     for province in provinces:
         monthly_amount_of_food = [0] * len(target)
-
         for food_type in target:
             all_years_food_type_amount = get_all_years_data(b, provinces[province], food_type)
-
             for index, item in enumerate(all_years_food_type_amount):
                 all_years_food_type_amount[index] = float(item.replace(",", "."))
-
             zipped_lists = zip(all_years_food_type_amount, monthly_amount_of_food)
             monthly_amount_of_food = [round(x + y, 2) for (x, y) in zipped_lists]
-        dictionary[province] = monthly_amount_of_food
+        dictionary[province] = dict(zip(YEARS,monthly_amount_of_food))
     return dictionary
 
-def percent_of_total(b, provinces, total_name, number_you_want_as_percent_name):
-    percent_dickt = {}
+
+def data_to_heatmap(b, provinces, name):
+    output={}
     for province in provinces:
-        total = get_all_years_data(b, provinces[province], total_name)
-        for index, item in enumerate(total):
-            total[index] = float(item.replace(",", "."))
-        number_you_want_as_percent = get_all_years_data(b, provinces[province], number_you_want_as_percent_name)
-        for index, item in enumerate(number_you_want_as_percent):
-            number_you_want_as_percent[index] = float(item.replace(",", "."))
-        zipped_lists = zip(number_you_want_as_percent, total)
-        percent_dickt[province] = dict(zip(YEARS, [round((x / y)*100, 2) for (x, y) in zipped_lists]))
-    return percent_dickt
-
-
+        all_data = get_all_years_data(b, provinces[province], name)
+        for index, item in enumerate(all_data):
+            all_data[index] = round(float(item.replace(",", ".")),2)
+        output[province] = dict(zip(YEARS, all_data))
+    print(output)
+    return output
 
 
 def test():
@@ -104,34 +95,28 @@ def test():
 
 
 load_data(DATA_PATH, bucket)
+
 #Średnia miesięczna ilość spożywanego jedzenia dla województw w latach 2016-2020
 monthly_all_food_consumption_df = pd.DataFrame(food_sum(bucket, PROVINCES, KEYS_LIST)).T
 
 #Procent wydawanych pieniędzy na żywność w stosunku do dochodu dla wojewodztw w latach 2016-2020
-percent_of_money_spend_for_food_by_income_df = pd.DataFrame(percent_of_total(bucket, PROVINCES, "dochod", "wydatki_na_zywnosc")).T
+money_spend_for_food_df = pd.DataFrame(data_to_heatmap(bucket, PROVINCES, "wydatki_na_zywnosc")).T
 
 #Procent wydawanych pieniedzy na żywność w stosunku do wydatków dla województw w latach 2016-2020
-percent_of_money_spend_for_food_by_expenses_df =pd.DataFrame(percent_of_total(bucket, PROVINCES, "wydatki_ogolem", "wydatki_na_zywnosc")).T
+money_spend_in_general_df =pd.DataFrame(data_to_heatmap(bucket, PROVINCES, "wydatki_ogolem")).T
 
 #test()
 
-#print(f"Średnia miesięczna ilość spożywanego jedzenia (w kilogramach):\n",monthly_all_food_consumption_df.head())
-#print(f"Stosunek wydatków ponoszonych na żywność do wydatków ogólnie (w procentach):\n",percent_of_money_spend_for_food_by_expenses_df.head())
-#print(food_sum(bucket, PROVINCES, KEYS_LIST))
-
-import seaborn as sns
-import matplotlib.pyplot as plt
 sns.set()
 
-#ax = sns.heatmap(percent_of_money_spend_for_food_by_income_df,annot=True,linewidths=.5,cmap="YlGnBu")
-#plt.title("Procent wydawanych pieniędzy na żywność w stosunku do dochodu dla wojewodztw w latach 2016-2020")
+#ax = sns.heatmap(money_spend_in_general_df,annot=True,linewidths=.5,cmap="YlGnBu",fmt='g')
+#plt.title("Średnie miesięczne wydatki (w złotych)/os dla wojewodztw w latach 2016-2020")
 #plt.show()
 
-
-#ax = sns.heatmap(percent_of_money_spend_for_food_by_expenses_df,annot=True,linewidths=.5,cmap="YlGnBu")
-#plt.title("Stosunek wydatków ponoszonych na żywność do wydatków ogólnie (w procentach)")
+#ax = sns.heatmap(money_spend_for_food_df, annot=True, linewidths=.5, cmap="YlGnBu", fmt='g')
+#plt.title("Średnie miesięczne wydatki na żywność (w złotych)/os dla wojewodztw w latach 2016-2020")
 #plt.show()
 
-#ax = sns.heatmap(monthly_all_food_consumption_df,annot=True,linewidths=.5,cmap="YlGnBu")
-#plt.title("Średnia miesięczna ilość spożywanego jedzenia dla województw w latach 2016-2020")
-#plt.show()
+ax = sns.heatmap(monthly_all_food_consumption_df, annot=True, linewidths=.5, cmap="YlGnBu")
+plt.title("Średnia miesięczna ilość spożywanego jedzenia (w kilogramach) na osobę dla województw w latach 2016-2020")
+plt.show()
